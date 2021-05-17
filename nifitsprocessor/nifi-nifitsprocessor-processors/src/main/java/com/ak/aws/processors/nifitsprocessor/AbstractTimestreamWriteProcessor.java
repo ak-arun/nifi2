@@ -1,6 +1,9 @@
 package com.ak.aws.processors.nifitsprocessor;
 
+import org.apache.nifi.components.PropertyDescriptor;
+import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.processor.ProcessContext;
+import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.processors.aws.AbstractAWSCredentialsProviderProcessor;
 
 import com.amazonaws.ClientConfiguration;
@@ -13,6 +16,21 @@ import com.amazonaws.services.timestreamwrite.AmazonTimestreamWriteAsyncClientBu
 import com.amazonaws.services.timestreamwrite.AmazonTimestreamWriteClient;
 
 public abstract class AbstractTimestreamWriteProcessor extends AbstractAWSCredentialsProviderProcessor<AmazonTimestreamWriteClient>{
+	
+	
+	protected static final PropertyDescriptor DB_NAME = new PropertyDescriptor.Builder()
+            .name("Database Name")
+            .description("Specifies the name of the Amazon Timestream Database")
+            .expressionLanguageSupported(ExpressionLanguageScope.VARIABLE_REGISTRY)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .build();
+	
+	protected static final PropertyDescriptor TBL_NAME = new PropertyDescriptor.Builder()
+            .name("Table Name")
+            .description("Specifies the name of the Amazon Timestream Table")
+            .expressionLanguageSupported(ExpressionLanguageScope.VARIABLE_REGISTRY)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .build();
 
 	@SuppressWarnings("deprecation")
 	@Override
