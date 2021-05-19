@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
@@ -33,6 +32,7 @@ import com.amazonaws.services.timestreamwrite.model.Dimension;
 import com.amazonaws.services.timestreamwrite.model.DimensionValueType;
 import com.amazonaws.services.timestreamwrite.model.MeasureValueType;
 import com.amazonaws.services.timestreamwrite.model.Record;
+import com.amazonaws.services.timestreamwrite.model.TimeUnit;
 import com.amazonaws.services.timestreamwrite.model.WriteRecordsRequest;
 import com.amazonaws.services.timestreamwrite.model.WriteRecordsResult;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -48,6 +48,7 @@ public class PutTimestreamJSON extends AbstractTimestreamWriteProcessor {
 	String tblName;
 	Map<String, String> attributes;
 	StringWriter sw;
+	Record r;
 
 	public static final List<PropertyDescriptor> properties = Collections
 			.unmodifiableList(Arrays.asList(AWS_CREDENTIALS_PROVIDER_SERVICE, REGION, ACCESS_KEY, SECRET_KEY,
@@ -88,6 +89,7 @@ public class PutTimestreamJSON extends AbstractTimestreamWriteProcessor {
 		MeasureValueType mType;
 		String processingStartTime = String.valueOf(System.currentTimeMillis());
 		String timeVal;
+		com.amazonaws.services.timestreamwrite.model.TimeUnit timeUnit =null;
 
 		List<TSDimension> dims;
 		List<TSMeasure> measures;
@@ -121,15 +123,19 @@ public class PutTimestreamJSON extends AbstractTimestreamWriteProcessor {
 			}
 			/* TIME */
 			parentTime = tsData.getTime(); // lets default to long
-			tsData.getTimeUnit();// this is not used
+			parentTimeUnit=tsData.getTimeUnit();// this is not used
 
 			measures = tsData.getMeasures();
 			if (util.isListNullOrEmpty(dims)) {
 				throw new InvalidTimestreamInputException("No timestream measure found. Please check your input");
 			}
 			for (TSMeasure m : measures) {
+				
+				
 				// each measure start
 
+				r= new Record();
+				
 				timeVal = null;
 
 				mName = m.getMeasureName();
@@ -145,23 +151,37 @@ public class PutTimestreamJSON extends AbstractTimestreamWriteProcessor {
 				if (util.isValueNullOrEmpty(mValue)) {
 					throw new InvalidTimestreamInputException("Measure should have a value. Please check your input");
 				}
-
+				
 				mType = util.getMeasureValueType(m.getMeasureType());
+				
+				r=r.withDimensions(dimensions).withMeasureName(mName).withMeasureValue(mValue).withMeasureValueType(mType);
 
 				if (!util.isValueNullOrEmpty(mTime)) {
 					timeVal = mTime;
+					timeUnit=util.getTimeUnit(mTimeUnit);
 				} else {
 					if (!util.isValueNullOrEmpty(parentTime)) {
 						timeVal = parentTime;
+						timeUnit = util.getTimeUnit(parentTimeUnit);
 					}
 				}
 
 				if (timeVal == null) {
 					timeVal = processingStartTime;
+					timeUnit=TimeUnit.MILLISECONDS;
 				}
+				
+				r=r.withTime(timeVal).withTimeUnit(timeUnit);
+				
+				
+				if(util.isNumeric(m.getVersion())) {
+					r = r.withVersion(Long.valueOf(m.getVersion().trim()));
+					
+				}
+				
+				records.add(r);
 
-				records.add(new Record().withDimensions(dimensions).withMeasureName(mName).withMeasureValue(mValue)
-						.withMeasureValueType(mType).withTime(String.valueOf(timeVal)));
+				
 				// each measure end
 			}
 			// END processing one record
@@ -205,7 +225,8 @@ public class PutTimestreamJSON extends AbstractTimestreamWriteProcessor {
 			flowFile = session.putAllAttributes(flowFile, getAttributes(flowFile, writeRecordsResult));
 			session.transfer(flowFile, REL_SUCCESS);
 
-			long transmissionMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+			
+			long transmissionMillis = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
 			session.getProvenanceReporter().send(flowFile, tblName, transmissionMillis);
 
 		} catch (Exception e) {
