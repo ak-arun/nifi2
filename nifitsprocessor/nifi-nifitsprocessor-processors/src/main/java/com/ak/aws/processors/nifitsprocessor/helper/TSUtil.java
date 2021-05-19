@@ -58,7 +58,7 @@ public class TSUtil {
 	}
 	
 	
-	public boolean isNumeric(String x) {
+	public boolean isNumericPositive(String x) {
 		try{
 			return Long.valueOf(x.trim()) > 0;
 		}catch (Exception e ) {
