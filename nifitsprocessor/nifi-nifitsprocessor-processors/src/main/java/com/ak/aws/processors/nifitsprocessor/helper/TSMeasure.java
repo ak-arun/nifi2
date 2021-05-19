@@ -12,6 +12,7 @@ public class TSMeasure {
 	private String measureType;
 	private String time;
 	private String timeUnit;
+	private String version;
 	
 	
 	public String getMeasureName() {
@@ -43,6 +44,12 @@ public class TSMeasure {
 	}
 	public void setTimeUnit(String timeUnit) {
 		this.timeUnit = timeUnit;
+	}
+	public String getVersion() {
+		return version;
+	}
+	public void setVersion(String version) {
+		this.version = version;
 	}
 	
 	
