@@ -6,6 +6,7 @@ import org.apache.nifi.logging.ComponentLog;
 
 import com.amazonaws.services.timestreamwrite.model.DimensionValueType;
 import com.amazonaws.services.timestreamwrite.model.MeasureValueType;
+import com.amazonaws.services.timestreamwrite.model.TimeUnit;
 
 public class TSUtil {
 
@@ -18,7 +19,7 @@ public class TSUtil {
 
 	public MeasureValueType getMeasureValueType(String type) {
 		try {
-			return MeasureValueType.fromValue(type.toUpperCase());
+			return MeasureValueType.fromValue(type.trim().toUpperCase());
 
 		} catch (Exception e) {
 			logger.warn("TimestreamProcessorUtil : unrecognized type, casting to VARCHAR");
@@ -28,7 +29,7 @@ public class TSUtil {
 
 	public DimensionValueType getDimensionValueType(String type) {
 		try {
-			return DimensionValueType.fromValue(type.toUpperCase());
+			return DimensionValueType.fromValue(type.trim().toUpperCase());
 		} catch (Exception e) {
 			logger.warn("TimestreamProcessorUtil : unrecognized type, casting to VARCHAR");
 			return DimensionValueType.VARCHAR;
@@ -54,6 +55,25 @@ public class TSUtil {
 		} catch (Exception e) {
 		}
 		return false;
+	}
+	
+	
+	public boolean isNumeric(String x) {
+		try{
+			return Long.valueOf(x.trim()) > 0;
+		}catch (Exception e ) {
+		}
+		return false;
+	}
+	
+	public TimeUnit getTimeUnit(String x) {
+		try {
+			return TimeUnit.fromValue(x.trim().toUpperCase());
+		}catch(Exception e) {
+			logger.warn("TimestreamProcessorUtil : unrecognized timeunit, defaulting to MILLISECONDS");
+		}
+		
+		return TimeUnit.MILLISECONDS;
 	}
 
 }
