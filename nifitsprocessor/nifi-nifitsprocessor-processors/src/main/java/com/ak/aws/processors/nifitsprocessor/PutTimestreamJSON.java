@@ -174,7 +174,7 @@ public class PutTimestreamJSON extends AbstractTimestreamWriteProcessor {
 				r=r.withTime(timeVal).withTimeUnit(timeUnit);
 				
 				
-				if(util.isNumeric(m.getVersion())) {
+				if(util.isNumericPositive(m.getVersion())) {
 					r = r.withVersion(Long.valueOf(m.getVersion().trim()));
 					
 				}
